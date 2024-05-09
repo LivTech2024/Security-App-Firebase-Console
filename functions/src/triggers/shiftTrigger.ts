@@ -59,7 +59,7 @@ export const shiftAssign = functions.firestore
                       from_name: companyName,
                       subject: 'Your schedule update',
                       to_email: empEmail,
-                      text: `You have been assigned for the following shift.\n Shift Name: ${ShiftName} \n Date: ${ShiftDate} \n Timing: ${ShiftStartTime}-${ShiftEndTime} \n Address: ${ShiftLocationAddress}`,
+                      text: `You have been assigned for the shift.\n Shift Name: ${ShiftName} \n Date: ${ShiftDate} \n Timing: ${ShiftStartTime}-${ShiftEndTime} \n Address: ${ShiftLocationAddress}`,
                     }
                   );
                 }
