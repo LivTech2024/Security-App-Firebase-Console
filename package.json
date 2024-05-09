@@ -1,9 +1,5 @@
 {
-  "dependencies": {
-    "nodemailer": "^6.9.13",
-    "prettier": "^3.2.5"
-  },
-  "devDependencies": {
-    "@types/nodemailer": "^6.4.15"
-  }
+  "name": "security-app-firebase-console",
+  "version": "1.0.0",
+  "private": true
 }
