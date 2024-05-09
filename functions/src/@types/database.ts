@@ -1,5 +1,5 @@
-import {FieldValue, GeoPoint, Timestamp} from "firebase-admin/firestore";
-import {IUserType} from "./enum";
+import { FieldValue, GeoPoint, Timestamp } from 'firebase-admin/firestore';
+import { IUserType } from './enum';
 
 export interface ICompaniesCollection {
   CompanyId: string;
@@ -42,7 +42,7 @@ export interface IAdminsCollection {
 }
 
 export interface IEmpLicenseDetails {
-  LicenseType: "driving" | "security";
+  LicenseType: 'driving' | 'security';
   LicenseNumber: string;
   LicenseExpDate: Timestamp | FieldValue;
   LicenseImg: string | null;
@@ -70,7 +70,7 @@ export interface IEmployeesCollection {
   EmployeeRole: string;
   EmployeePayRate: number;
   EmployeeMaxHrsPerWeek: number;
-  EmployeeIsAvailable: "available" | "out_of_reach" | "on_vacation";
+  EmployeeIsAvailable: 'available' | 'out_of_reach' | 'on_vacation';
   EmployeeSupervisorId: string[] | null;
   EmployeeIsBanned: boolean;
   EmployeeCompanyId: string;
@@ -93,7 +93,7 @@ export interface IShiftTasksChild {
   ShiftTaskQrCodeReq: boolean;
   ShiftTaskReturnReq: boolean;
   ShiftTaskStatus: {
-    TaskStatus: "pending" | "completed";
+    TaskStatus: 'pending' | 'completed';
     TaskCompletedById?: string;
     TaskCompletedByName?: string;
     TaskCompletionTime?: Timestamp | FieldValue;
@@ -133,7 +133,7 @@ export interface IShiftsCollection {
   ShiftPhotos?: string[];
   ShiftPhotoUploadIntervalInMinutes?: number | null;
   ShiftCurrentStatus: {
-    Status: "pending" | "started" | "completed";
+    Status: 'pending' | 'started' | 'completed';
     StatusReportedById?: string;
     StatusReportedByName?: string;
     StatusReportedTime?: Timestamp | FieldValue;
@@ -151,7 +151,7 @@ export interface IPatrolCheckPointsChild {
   CheckPointCategory: string | null;
   CheckPointHint: string | null;
   CheckPointStatus: {
-    Status: "checked" | "not_checked";
+    Status: 'checked' | 'not_checked';
     StatusReportedById?: string;
     StatusReportedByName?: string;
     StatusReportedTime?: Timestamp | FieldValue;
@@ -172,7 +172,7 @@ export interface IPatrolsCollection {
   PatrolRequiredCount: number;
   PatrolCheckPoints: IPatrolCheckPointsChild[];
   PatrolCurrentStatus: {
-    Status: "pending" | "started" | "completed";
+    Status: 'pending' | 'started' | 'completed';
     StatusCompletedCount: number;
     StatusReportedById?: string;
     StatusReportedByName?: string;
@@ -208,7 +208,7 @@ export interface IReportsCollection {
   ReportPatrolId?: string;
   ReportImage?: string[];
   ReportVideo?: string[];
-  ReportStatus: "pending" | "started" | "completed";
+  ReportStatus: 'pending' | 'started' | 'completed';
   ReportCreatedAt: Timestamp | FieldValue;
 }
 
@@ -235,7 +235,7 @@ export interface INotificationsCollection {
   NotificationId: string;
   NotificationCompanyId: string;
   NotificationBranchId?: string;
-  NotificationCreatedBy: "admin" | "employee";
+  NotificationCreatedBy: 'admin' | 'employee';
   NotificationCreatorId: string;
   NotificationTitle: string;
   NotificationData: string;
