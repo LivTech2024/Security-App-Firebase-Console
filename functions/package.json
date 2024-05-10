@@ -14,7 +14,7 @@
     "format": "prettier -w \"**/*.{ts,json}\""
   },
   "engines": {
-    "node": ">=18"
+    "node": "18"
   },
   "main": "lib/index.js",
   "dependencies": {
