@@ -1,18 +1,18 @@
 /* eslint-disable max-len */
 import * as functions from 'firebase-functions';
-import { securityAppAdmin } from '../methods/firebaseInit';
-import axios from 'axios';
+//import { securityAppAdmin } from '../methods/firebaseInit';
+//import axios from 'axios';
 import { IShiftsCollection } from '../@types/database';
 import { CollectionName } from '../@types/enum';
 
-export const shiftAssign = functions.firestore
-  .document(CollectionName.shifts + '/ShiftId')
+export const shiftUpdate = functions.firestore
+  .document(CollectionName.shifts + '/{ShiftId}')
   .onUpdate(async (snap) => {
     try {
-      const shiftOldData = snap.before.data() as IShiftsCollection;
-      const { ShiftAssignedUserId: oldAssignedUsers } = shiftOldData;
+      //const shiftOldData = snap?.before?.data() as IShiftsCollection;
+
       const shiftNewData = snap.after.data() as IShiftsCollection;
-      const {
+      /*  const {
         ShiftDate,
         ShiftStartTime,
         ShiftEndTime,
@@ -20,14 +20,17 @@ export const shiftAssign = functions.firestore
         ShiftName,
         ShiftAssignedUserId,
         ShiftCompanyId,
-      } = shiftNewData;
+      } = shiftNewData; */
 
       //* This is to send mail to assigned users
-      if (
-        oldAssignedUsers.length !== ShiftAssignedUserId.length ||
-        !oldAssignedUsers.every(
-          (value, index) => value === ShiftAssignedUserId[index]
-        )
+      /* if (
+        (shiftOldData &&
+          (shiftOldData?.ShiftAssignedUserId?.length !==
+            ShiftAssignedUserId.length ||
+            !shiftOldData?.ShiftAssignedUserId?.every(
+              (value, index) => value === ShiftAssignedUserId[index]
+            ))) ||
+        !shiftOldData
       ) {
         //* Fetch company
         const cmpSnapshot = await securityAppAdmin
@@ -54,7 +57,7 @@ export const shiftAssign = functions.firestore
                 const empEmail = empData?.EmployeeEmail;
                 if (empEmail) {
                   await axios.post(
-                    'https://backend-sceurity-app.onrender.com/api/send_email',
+                    'https://backend-sceurity-app-rbbz.onrender.com/api/send_email',
                     {
                       from_name: companyName,
                       subject: 'Your schedule update',
@@ -68,6 +71,8 @@ export const shiftAssign = functions.firestore
           );
         }
       }
+
+      */
     } catch (error) {
       console.log(error);
     }

@@ -1,3 +1,3 @@
-import { shiftAssign } from './triggers/shiftTrigger';
+import { shiftUpdate } from './triggers/shiftTrigger';
 
-export const shiftAssignMain = shiftAssign;
+export const shiftUpdateMain = shiftUpdate;
