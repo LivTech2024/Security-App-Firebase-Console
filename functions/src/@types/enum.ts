@@ -6,7 +6,8 @@ export enum CollectionName {
   employees = 'Employees',
   shifts = 'Shifts',
   patrols = 'Patrols',
-  notifications = 'Notifications',
+  patrolLogs = 'PatrolLogs',
+  messages = 'Messages',
   loggedInUsers = 'LoggedInUsers',
   locations = 'Locations',
   reportCategories = 'ReportCategories',
@@ -19,6 +20,12 @@ export enum CollectionName {
   superAdmin = 'SuperAdmin',
   equipments = 'Equipments',
   equipmentAllocations = 'EquipmentAllocations',
+  employeesDAR = 'EmployeesDAR',
+  visitors = 'Visitors',
+  keys = 'Keys',
+  keyAllocations = 'KeyAllocations',
+  tasks = 'Tasks',
+  taskLogs = 'TaskLogs',
 }
 
 export enum IUserType {

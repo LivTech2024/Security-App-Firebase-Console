@@ -1,4 +1,4 @@
-import { FieldValue, GeoPoint, Timestamp } from 'firebase-admin/firestore';
+import type { FieldValue, GeoPoint, Timestamp } from 'firebase-admin/firestore';
 import { IUserType } from './enum';
 
 export interface ICompaniesCollection {
@@ -117,7 +117,7 @@ export interface IShiftsCollection {
   ShiftEnableRestrictedRadius: boolean;
   ShiftDescription: string | null;
   ShiftAssignedUserId: string[];
-  ShiftClientId: string | null; //* Null for mobile guard
+  ShiftClientId: string | null; //*Null for mobile guard
   ShiftCompanyId: string;
   ShiftRequiredEmp: number; //* By default 1
   ShiftCompanyBranchId?: string | null;
@@ -130,14 +130,15 @@ export interface IShiftsCollection {
     WellnessComment?: string | null;
     WellnessImg?: string | null;
   }[];
-  ShiftPhotos?: string[];
   ShiftPhotoUploadIntervalInMinutes?: number | null;
   ShiftCurrentStatus: {
     Status: 'pending' | 'started' | 'completed';
     StatusReportedById?: string;
     StatusReportedByName?: string;
+    StatusStartedTime?: Timestamp | FieldValue;
     StatusReportedTime?: Timestamp | FieldValue;
     StatusShiftTotalHrs?: number;
+    StatusEndReason?: string;
   }[];
   ShiftLinkedPatrolIds: string[];
   ShiftIsSpecialShift: boolean;
@@ -179,12 +180,35 @@ export interface IPatrolsCollection {
     StatusReportedTime?: Timestamp | FieldValue;
   }[];
   PatrolFailureReason?: string;
-  PatrolClientId?: string | null;
+  PatrolClientId: string;
   PatrolRestrictedRadius: number | null;
   PatrolKeepGuardInRadiusOfLocation: boolean;
   PatrolReminderInMinutes: number;
   PatrolCreatedAt: Timestamp | FieldValue;
   PatrolModifiedAt: Timestamp | FieldValue;
+}
+
+export interface IPatrolLogsCollection {
+  PatrolLogId: string;
+  PatrolId: string;
+  PatrolLogShiftId: string;
+  PatrolDate: Timestamp | FieldValue; //*Same as ShiftDate
+  PatrolLogGuardId: string;
+  PatrolLogGuardName: string;
+  PatrolLogStartedAt: Timestamp | FieldValue;
+  PatrolLogPatrolCount: number;
+  PatrolLogCheckPoints: {
+    CheckPointName: string;
+    CheckPointStatus: 'checked' | 'not_checked';
+    CheckPointReportedAt: Timestamp | FieldValue;
+    CheckPointFailureReason?: string;
+    CheckPointComment?: string | null;
+    CheckPointImage?: string[];
+  }[];
+  PatrolLogFeedbackComment?: string | null;
+  PatrolLogStatus: 'started' | 'completed';
+  PatrolLogEndedAt: Timestamp | FieldValue;
+  PatrolLogCreatedAt: Timestamp;
 }
 
 export interface IReportCategoriesCollection {
@@ -196,6 +220,10 @@ export interface IReportCategoriesCollection {
 
 export interface IReportsCollection {
   ReportId: string;
+  ReportLocationId: string;
+  ReportLocationName: string;
+  ReportIsFollowUpRequired: boolean;
+  ReportFollowedUpId?: string | null; //*Id of report which followed up this report
   ReportCompanyId: string;
   ReportCompanyBranchId?: string;
   ReportEmployeeId: string;
@@ -209,6 +237,7 @@ export interface IReportsCollection {
   ReportImage?: string[];
   ReportVideo?: string[];
   ReportStatus: 'pending' | 'started' | 'completed';
+  ReportClientId: string;
   ReportCreatedAt: Timestamp | FieldValue;
 }
 
@@ -231,24 +260,38 @@ export interface IDocumentsCollection {
   DocumentModifiedAt: Timestamp | FieldValue;
 }
 
-export interface INotificationsCollection {
-  NotificationId: string;
-  NotificationCompanyId: string;
-  NotificationBranchId?: string;
-  NotificationCreatedBy: 'admin' | 'employee';
-  NotificationCreatorId: string;
-  NotificationTitle: string;
-  NotificationData: string;
-  NotificationCreatedAt: Timestamp | FieldValue;
+export interface IMessagesCollection {
+  MessageId: string;
+  MessageCompanyId: string;
+  MessageData: string;
+  MessageCreatedById: string;
+  MessageCreatedByName: string;
+  MessageReceiversId: string[];
+  MessageCreatedAt: Timestamp | FieldValue;
+}
+
+export interface ILocationPostOrderChildCollection {
+  PostOrderPdf: string;
+  PostOrderTitle: string;
+  PostOrderOtherData?: string[];
+  PostOrderComment?: string | null;
 }
 
 export interface ILocationsCollection {
   LocationId: string;
   LocationCompanyId: string;
+  LocationClientId: string;
   LocationName: string;
   LocationSearchIndex: string[];
   LocationAddress: string;
   LocationCoordinates: GeoPoint;
+  LocationContractStartDate: Timestamp | FieldValue;
+  LocationContractEndDate: Timestamp | FieldValue;
+  LocationContractAmount: number;
+  LocationPatrolPerHitRate: number;
+  LocationShiftHourlyRate: number;
+  LocationPostOrder?: ILocationPostOrderChildCollection | null;
+  LocationModifiedAt: Timestamp | FieldValue;
   LocationCreatedAt: Timestamp | FieldValue;
 }
 
@@ -259,6 +302,8 @@ export interface ILoggedInUsersCollection {
   LoggedInCrypt: string;
   LoggedInUserType: IUserType;
   LoggedInCreatedAt: Timestamp | FieldValue;
+  LoggedInNotifyFcmToken?: string;
+  LoggedInPlatform: 'web' | 'android' | 'ios';
 }
 
 export interface IInvoiceItems {
@@ -296,17 +341,16 @@ export interface IInvoicesCollection {
 export interface IClientsCollection {
   ClientId: string;
   ClientCompanyId: string;
+  ClientHomePageBgImg?: string | null;
   ClientName: string;
   ClientPhone: string;
   ClientNameSearchIndex: string[];
   ClientEmail: string; //* This will be used for client portal login
   ClientPassword: string; //* This will be used for client portal login
   ClientAddress: string | null;
-  ClientContractStartDate: Timestamp | FieldValue;
-  ClientContractEndDate: Timestamp | FieldValue;
-  ClientContractAmount: number;
-  ClientHourlyRate: number;
   ClientBalance: number;
+  ClientSendEmailForEachPatrol: boolean; //*by default true
+  ClientSendEmailForEachShift: boolean; //*by default true
   ClientCreatedAt: Timestamp | FieldValue;
   ClientModifiedAt: Timestamp | FieldValue;
 }
@@ -336,17 +380,136 @@ export interface IEquipmentAllocations {
   EquipmentAllocationEquipQty: number;
   EquipmentAllocationDate: Timestamp | FieldValue;
   EquipmentAllocationEmpId: string;
-  EquipmentAllocationEmpName: string;
   EquipmentAllocationStartDate: Timestamp | FieldValue;
   EquipmentAllocationEndDate: Timestamp | FieldValue;
   EquipmentAllocationIsReturned: boolean;
+  EquipmentAllocationReturnedAt?: Timestamp | FieldValue;
   EquipmentAllocationCreatedAt: Timestamp | FieldValue;
 }
 
-//* SuperAdmin
+//*SuperAdmin
 export interface ISuperAdminCollection {
   SuperAdminId: string;
   SuperAdminEmail: string;
   SuperAdminName: string;
   SuperAdminPhone: string;
+}
+
+export interface IEmployeeDARCollection {
+  EmpDarId: string;
+  EmpDarEmpId: string;
+  EmpDarEmpName: string;
+  EmpDarClientId: string;
+  EmpDarClientName: string;
+  EmpDarLocationId: string;
+  EmpDarLocationName: string;
+  EmpDarShiftId: string;
+  EmpDarCompanyId: string;
+  EmpDarCompanyBranchId: string | null;
+  EmpDarMedias: string[];
+  EmpDarDate: Timestamp | FieldValue; //* Same as Shift Date
+  EmpDarTile: {
+    TileContent: string;
+    TileTime: string;
+    TileImages: string[];
+    TileLocation: string;
+  }[];
+  EmpDarCreatedAt: Timestamp | FieldValue;
+}
+
+export interface ILogBookCollection {
+  LogBookId: string;
+  LogBookCompanyId: string;
+  LogBookCompanyBranchId: string | null;
+  LogBookClientId: string;
+  LogBookClientName: string;
+  LogBookLocationId: string;
+  LogBookLocationName: string;
+  LogBookDate: Timestamp | FieldValue;
+  LogBookEmpId: string;
+  LogBookEmpName: string;
+  LogBookData: {
+    LogContent: string;
+    LogType:
+      | 'shift_start'
+      | 'shift_break'
+      | 'shift_end'
+      | 'patrol_start'
+      | 'patrol_end'
+      | 'check_point';
+    LogReportedAt: Timestamp | FieldValue;
+  }[];
+  LogBookCreatedAt: Timestamp | FieldValue;
+}
+
+export interface IVisitorsCollection {
+  VisitorId: string; //* Doc Id
+  VisitorCompanyId: string;
+  VisitorCompanyBranchId: string;
+  VisitorAssetHandover: string;
+  VisitorAssetDurationInMinute: number;
+  VisitorLocationId: string;
+  VisitorLocationName: string;
+  VisitorComment: string | null;
+  VisitorContactNumber: string;
+  VisitorEmail: string;
+  VisitorInTime: Timestamp | FieldValue;
+  VisitorOutTime: Timestamp | FieldValue;
+  VisitorName: string;
+  VisitorNoOfPerson: number;
+  VisitorCreatedAt: Timestamp | FieldValue;
+}
+
+export interface IKeysCollection {
+  KeyId: string;
+  KeyCompanyId: string;
+  KeyCompanyBranchId: string | null;
+  KeyName: string;
+  KeyNameSearchIndex: string[];
+  KeyDescription: string | null;
+  KeyAllotedQuantity: number;
+  KeyTotalQuantity: number;
+  KeyCreatedAt: Timestamp | FieldValue;
+  KeyModifiedAt: Timestamp | FieldValue;
+}
+
+export interface IKeyAllocations {
+  KeyAllocationId: string;
+  KeyAllocationKeyId: string;
+  KeyAllocationKeyQty: number;
+  KeyAllocationDate: Timestamp | FieldValue;
+  KeyAllocationRecipientName: string;
+  KeyAllocationRecipientContact: string;
+  KeyAllocationRecipientCompany?: string | null;
+  KeyAllocationPurpose: string;
+  KeyAllocationStartTime: Timestamp | FieldValue;
+  KeyAllocationEndTime: Timestamp | FieldValue;
+  KeyAllocationIsReturned: boolean;
+  KeyAllocationReturnedAt?: Timestamp | FieldValue;
+  KeyAllocationCreatedAt: Timestamp | FieldValue;
+}
+
+export interface ITasksCollection {
+  TaskId: string;
+  TaskCompanyId: string;
+  TaskCompanyBranchId?: string | null;
+  TaskDescription: string;
+  TaskStartDate: Timestamp | FieldValue;
+  TaskForDays: number;
+  TaskAllotedLocationId?: string | null; //* Either task will be alloted to location
+  TaskAllotedToEmpIds?: string[] | null; //* Or it will be alloted directly to emp
+  TaskIsAllotedToAllEmps?: boolean;
+  TaskCreatedAt: Timestamp | FieldValue;
+}
+
+//* A log will be generated for each employee when he start/completes the task
+export interface ITaskLogsCollection {
+  TaskLogId: string;
+  TaskId: string;
+  TaskLogEmpId: string;
+  TaskLogEmpName: string;
+  TaskLogComment?: string | null;
+  TaskLogStatus: 'pending' | 'completed';
+  TaskLogCompletionTime: Timestamp | FieldValue;
+  TaskLogCreatedAt: Timestamp | FieldValue;
 }
