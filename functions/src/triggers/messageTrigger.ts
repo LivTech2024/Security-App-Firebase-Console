@@ -22,7 +22,7 @@ export const messageCreate = functions.firestore
             //*Fetch latest 5 loggedIn Device of user
             //* At most 5 device can receive notification
             const loggedInDocSnapshot = await firestore()
-              .collection(`${CollectionName.companies}`)
+              .collection(`${CollectionName.loggedInUsers}`)
               .where('LoggedInUserId', '==', receiversId)
               .orderBy('LoggedInCreatedAt', 'desc')
               .limit(5)
