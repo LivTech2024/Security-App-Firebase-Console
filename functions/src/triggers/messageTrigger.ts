@@ -6,13 +6,15 @@ import {
 } from '../@types/database';
 import { firestore } from 'firebase-admin';
 import { sendFCMNotification } from '../notification/fcm';
+import { BaseMessage } from 'firebase-admin/lib/messaging/messaging-api';
 
 export const messageCreate = functions.firestore
   .document(CollectionName.messages + '/{MessageId}')
   .onCreate(async (snap) => {
     try {
       const messageData = snap.data() as IMessagesCollection;
-      const { MessageReceiversId, MessageData } = messageData;
+      const { MessageReceiversId, MessageData, MessageCreatedById } =
+        messageData;
 
       if (MessageReceiversId && Array.isArray(MessageReceiversId)) {
         const fcmTokens: string[] = [];
@@ -34,7 +36,10 @@ export const messageCreate = functions.firestore
 
             if (loggedInDeviceData && loggedInDeviceData.length > 0) {
               loggedInDeviceData.forEach((data) => {
-                if (data.LoggedInNotifyFcmToken) {
+                if (
+                  data.LoggedInNotifyFcmToken &&
+                  !fcmTokens.includes(data.LoggedInNotifyFcmToken)
+                ) {
                   fcmTokens.push(data.LoggedInNotifyFcmToken);
                 }
               });
@@ -43,10 +48,14 @@ export const messageCreate = functions.firestore
         );
 
         if (fcmTokens.length > 0) {
-          await sendFCMNotification(
-            { notification: { body: MessageData, title: 'New message' } },
-            fcmTokens
-          );
+          const message: BaseMessage = {
+            notification: {
+              title: 'New Message Received',
+              body: MessageData,
+            },
+          };
+
+          await sendFCMNotification(message, fcmTokens);
         }
       }
     } catch (error) {
