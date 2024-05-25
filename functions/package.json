@@ -8,7 +8,7 @@
     "shell": "npm run build && firebase functions:shell",
     "start": "npm run shell",
     "deploy:dev": "firebase deploy --only functions --project dev",
-    "deploy:prod": "firebase deploy --only functions --project default",
+    "deploy:prod": "firebase deploy --only functions --project prod",
     "deploy:hosting": "firebase deploy --only hosting",
     "logs": "firebase functions:log",
     "format": "prettier -w \"**/*.{ts,json}\""
