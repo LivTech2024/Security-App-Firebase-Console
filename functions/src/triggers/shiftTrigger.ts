@@ -4,7 +4,7 @@ import { IShiftsCollection } from '../@types/database';
 import { CollectionName } from '../@types/enum';
 import { sendEmail } from '../notification/email';
 import { getCompanyDetails, getEmpDetails } from '../utils/firebaseUtils';
-import { findRemovedElements } from '../utils/misc';
+import { findRemovedElements, formatDate } from '../utils/misc';
 
 //* Trigger tasks
 const sendEmailToEmpWhoHasBeenRemovedFromShift = async (
@@ -33,11 +33,12 @@ const sendEmailToEmpWhoHasBeenRemovedFromShift = async (
 
         if (empDetails) {
           const { EmployeeEmail } = empDetails;
+          functions.logger.log('Sending Email to-> ', EmployeeEmail);
           await sendEmail({
             from_name: CompanyName,
             subject: 'Your schedule update',
             to_email: EmployeeEmail,
-            text: `You have been removed from the shift.\n Shift Name: ${ShiftName} \n Date: ${ShiftDate} \n Timing: ${ShiftStartTime}-${ShiftEndTime} \n Address: ${ShiftLocationAddress || 'N/A'}`,
+            text: `You have been removed from the shift.\n Shift Name: ${ShiftName} \n Date: ${formatDate(ShiftDate)} \n Timing: ${ShiftStartTime}-${ShiftEndTime} \n Address: ${ShiftLocationAddress || 'N/A'}`,
           });
         }
       })
