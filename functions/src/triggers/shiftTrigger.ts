@@ -1,78 +1,62 @@
 /* eslint-disable max-len */
 import * as functions from 'firebase-functions';
-//import { securityAppAdmin } from '../methods/firebaseInit';
-//import axios from 'axios';
 import { IShiftsCollection } from '../@types/database';
 import { CollectionName } from '../@types/enum';
+import { sendEmail } from '../notification/email';
+import { getCompanyDetails, getEmpDetails } from '../utils/firebaseUtils';
+
+//* Trigger tasks
+const sendEmailToEmpWhoHasBeenRemovedFromShift = async (
+  shiftOldData: IShiftsCollection,
+  shiftNewData: IShiftsCollection
+) => {
+  const {
+    ShiftAssignedUserId: oldUserIds,
+    ShiftName,
+    ShiftDate,
+    ShiftStartTime,
+    ShiftEndTime,
+    ShiftLocationAddress,
+  } = shiftOldData;
+  const { ShiftAssignedUserId: newUserIds, ShiftCompanyId } = shiftNewData;
+
+  const empRemovedIds = findRemovedElements(oldUserIds, newUserIds);
+
+  if (empRemovedIds && empRemovedIds.length > 0) {
+    const companyDetails = await getCompanyDetails(ShiftCompanyId);
+    const { CompanyName } = companyDetails;
+
+    await Promise.all(
+      empRemovedIds.map(async (empId) => {
+        const empDetails = await getEmpDetails(empId);
+
+        if (empDetails) {
+          const { EmployeeEmail } = empDetails;
+          await sendEmail({
+            from_name: CompanyName,
+            subject: 'Your schedule update',
+            to_email: EmployeeEmail,
+            text: `You have been removed from the shift.\n Shift Name: ${ShiftName} \n Date: ${ShiftDate} \n Timing: ${ShiftStartTime}-${ShiftEndTime} \n Address: ${ShiftLocationAddress || 'N/A'}`,
+          });
+        }
+      })
+    );
+  }
+};
 
 export const shiftUpdate = functions.firestore
   .document(CollectionName.shifts + '/{ShiftId}')
   .onUpdate(async (snap) => {
     try {
-      //const shiftOldData = snap?.before?.data() as IShiftsCollection;
+      const shiftOldData = snap?.before?.data() as IShiftsCollection;
 
       const shiftNewData = snap.after.data() as IShiftsCollection;
-      /*  const {
-        ShiftDate,
-        ShiftStartTime,
-        ShiftEndTime,
-        ShiftLocationAddress,
-        ShiftName,
-        ShiftAssignedUserId,
-        ShiftCompanyId,
-      } = shiftNewData; */
 
-      //* This is to send mail to assigned users
-      /* if (
-        (shiftOldData &&
-          (shiftOldData?.ShiftAssignedUserId?.length !==
-            ShiftAssignedUserId.length ||
-            !shiftOldData?.ShiftAssignedUserId?.every(
-              (value, index) => value === ShiftAssignedUserId[index]
-            ))) ||
-        !shiftOldData
-      ) {
-        //* Fetch company
-        const cmpSnapshot = await securityAppAdmin
-          .firestore()
-          .doc(`${CollectionName.companies}/${ShiftCompanyId}`)
-          .get();
-        const companyData = cmpSnapshot.data();
-
-        const companyName: string = companyData?.CompanyName;
-
-        if (ShiftAssignedUserId && ShiftAssignedUserId.length > 0) {
-          await Promise.all(
-            ShiftAssignedUserId.map(async (id) => {
-              const empSnapshot = await securityAppAdmin
-                .firestore()
-                .collection(CollectionName.employees)
-                .where('EmployeeId', '==', id)
-                .limit(1)
-                .get();
-
-              const empData = empSnapshot?.docs[0]?.data();
-
-              if (empData) {
-                const empEmail = empData?.EmployeeEmail;
-                if (empEmail) {
-                  await axios.post(
-                    'https://backend-sceurity-app-rbbz.onrender.com/api/send_email',
-                    {
-                      from_name: companyName,
-                      subject: 'Your schedule update',
-                      to_email: empEmail,
-                      text: `You have been assigned for the shift.\n Shift Name: ${ShiftName} \n Date: ${ShiftDate} \n Timing: ${ShiftStartTime}-${ShiftEndTime} \n Address: ${ShiftLocationAddress}`,
-                    }
-                  );
-                }
-              }
-            })
-          );
-        }
-      }
-
-      */
+      //* To send email to employees who have been removed from a shift
+      await sendEmailToEmpWhoHasBeenRemovedFromShift(
+        shiftOldData,
+        shiftNewData
+      );
     } catch (error) {
       console.log(error);
     }
