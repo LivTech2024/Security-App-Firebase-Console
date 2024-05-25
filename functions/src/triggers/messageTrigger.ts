@@ -13,8 +13,7 @@ export const messageCreate = functions.firestore
   .onCreate(async (snap) => {
     try {
       const messageData = snap.data() as IMessagesCollection;
-      const { MessageReceiversId, MessageData, MessageCreatedById } =
-        messageData;
+      const { MessageReceiversId, MessageData } = messageData;
 
       if (MessageReceiversId && Array.isArray(MessageReceiversId)) {
         const fcmTokens: string[] = [];

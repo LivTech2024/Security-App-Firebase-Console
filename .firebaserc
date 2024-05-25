@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "livtech-dbcf2",
+    "prod": "livtech-dbcf2",
     "dev": "security-app-3b156"
   },
   "targets": {},

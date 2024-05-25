@@ -4,6 +4,7 @@ import { IShiftsCollection } from '../@types/database';
 import { CollectionName } from '../@types/enum';
 import { sendEmail } from '../notification/email';
 import { getCompanyDetails, getEmpDetails } from '../utils/firebaseUtils';
+import { findRemovedElements } from '../utils/misc';
 
 //* Trigger tasks
 const sendEmailToEmpWhoHasBeenRemovedFromShift = async (
