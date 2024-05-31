@@ -6,7 +6,7 @@ import {
 import { CollectionName } from '../@types/enum';
 import { securityAppAdmin } from '../methods/firebaseInit';
 import { sendEmail } from '../notification/email';
-import { generatePdf, generatePdfFromDarData } from '../pdf/genPdf';
+import { generatePdfFromHtml } from './pdf/generatePdfFromHtml';
 
 export const getCompanyDetails = async (cmpId: string) => {
   const cmpSnapshot = await securityAppAdmin
@@ -174,18 +174,21 @@ export const processAndSendEmployeeDARReport = async (
   }
 
   const htmlContent = generateHtmlContent(darData);
-  const pdfBuffer = await generatePdf(htmlContent);
-  await sendEmail({
-    from_name: 'Testing Dar',
-    subject: 'DAR Report',
-    to_email: 'sutarvaibhav37@gmail.com',
-    attachments: [
-      {
-        filename: 'DAR.pdf',
-        content: pdfBuffer,
-        contentType: 'application/pdf',
-      },
-    ],
-  });
-  console.log('Email sent successfully.');
+  const pdfBuffer = await generatePdfFromHtml(htmlContent);
+
+  if (pdfBuffer) {
+    await sendEmail({
+      from_name: 'Testing Dar',
+      subject: 'DAR Report',
+      to_email: 'sutarvaibhav37@gmail.com',
+      attachments: [
+        {
+          filename: 'DAR.pdf',
+          content: pdfBuffer as unknown as string,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+    console.log('Email sent successfully.');
+  }
 };
