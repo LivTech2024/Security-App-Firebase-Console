@@ -35,6 +35,10 @@ export const compressUploadedImage = functions.storage
       await bucket.file(filePath).download({ destination: tempFilePath });
       console.log(`Downloaded ${filePath} to ${tempFilePath}`);
 
+      // Get the existing metadata, including the download token
+      const [metadata] = await bucket.file(filePath).getMetadata();
+      const existingToken = metadata?.metadata?.firebaseStorageDownloadTokens;
+
       // Load the image onto a canvas
       const image = await loadImage(tempFilePath);
       const canvas = createCanvas(image.width, image.height);
@@ -51,7 +55,11 @@ export const compressUploadedImage = functions.storage
         destination: filePath,
         metadata: {
           contentType: contentType, // Preserve the original content type
+          metadata: {
+            firebaseStorageDownloadTokens: existingToken, // Use the existing download token
+          },
         },
+        predefinedAcl: 'publicRead', // Set the file to be publicly readable
       });
     } catch (error) {
       console.error('Error processing file:', error);
