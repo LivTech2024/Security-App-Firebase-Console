@@ -16,6 +16,11 @@ export const compressUploadedImage = functions.storage
 
     if (!filePath || !contentType) return;
 
+    if (object.metadata && object.metadata.processed === 'true') {
+      console.log('This image is already processed.');
+      return null;
+    }
+
     if (!contentType?.startsWith('image/')) {
       console.log('This is not an image.');
       return null;
@@ -57,6 +62,7 @@ export const compressUploadedImage = functions.storage
           contentType: contentType, // Preserve the original content type
           metadata: {
             firebaseStorageDownloadTokens: existingToken, // Use the existing download token
+            processed: 'true',
           },
         },
         predefinedAcl: 'publicRead', // Set the file to be publicly readable
