@@ -207,7 +207,7 @@ export interface IPatrolLogsCollection {
   }[];
   PatrolLogFeedbackComment?: string | null;
   PatrolLogStatus: 'started' | 'completed';
-  PatrolLogEndedAt: Timestamp | FieldValue;
+  PatrolLogEndedAt: Timestamp;
   PatrolLogCreatedAt: Timestamp;
 }
 
@@ -291,6 +291,16 @@ export interface ILocationsCollection {
   LocationPatrolPerHitRate: number;
   LocationShiftHourlyRate: number;
   LocationPostOrder?: ILocationPostOrderChildCollection | null;
+  LocationCalloutDetails: {
+    CalloutCostInitialMinutes: number;
+    CalloutCostInitialCost: number;
+    CalloutCostPerHour: number;
+  };
+  LocationManagerName: string;
+  LocationManagerEmail: string; //*All the email report will be sent to this email id
+  LocationSendEmailToClient: boolean; //*by default true
+  LocationSendEmailForEachPatrol: boolean; //*by default true
+  LocationSendEmailForEachShift: boolean; //*by default true
   LocationModifiedAt: Timestamp | FieldValue;
   LocationCreatedAt: Timestamp | FieldValue;
 }
@@ -411,8 +421,22 @@ export interface IEmployeeDARCollection {
   EmpDarTile: {
     TileContent: string;
     TileTime: string;
+    TileDate: Timestamp | FieldValue;
+    TileReportName: string;
+    TileReportSearchId: string;
     TileImages: string[];
     TileLocation: string;
+    TilePatrol: {
+      TilePatrolData: string; //include start and end time
+      TilePatrolId: string; // PatrolLog id for link it in pdf
+      TilePatrolImage: [];
+      TilePatrolName: string;
+    }[];
+    TileReport: {
+      TileReportId: string;
+      TileReportName: string;
+      TileReportSearchId: string;
+    }[];
   }[];
   EmpDarCreatedAt: Timestamp | FieldValue;
 }
@@ -459,7 +483,27 @@ export interface IVisitorsCollection {
   VisitorNoOfPerson: number;
   VisitorCreatedAt: Timestamp | FieldValue;
 }
+export interface IShiftExchangeCollection {
+  ShiftExchReceiverShiftId: string;
+  ShiftExchReqCreatedAt: Timestamp | FieldValue;
+  ShiftExchReqId: string;
+  ShiftExchReqModifiedAt: Timestamp | FieldValue;
+  ShiftExchShiftDate: Timestamp | FieldValue;
+  ShiftExchReqReceiverId: string;
+  ShiftExchReqSenderId: string;
+  ShiftExchReqStatus: 'started' | 'pending' | 'completed' | 'cancelled'; //"cancelled"
+  ShiftExchSenderShiftId: string;
+}
 
+export interface ShiftOffer {
+  ShiftOfferCompanyId: string;
+  ShiftOfferCreatedAt: Timestamp | FieldValue;
+  ShiftOfferId: string;
+  ShiftOfferSenderId: string;
+  ShiftOfferAcceptedId: string;
+  ShiftOfferShiftId: string;
+  ShiftOfferStatus: 'started' | 'pending' | 'completed' | 'cancelled';
+}
 export interface IKeysCollection {
   KeyId: string;
   KeyCompanyId: string;
@@ -472,7 +516,34 @@ export interface IKeysCollection {
   KeyCreatedAt: Timestamp | FieldValue;
   KeyModifiedAt: Timestamp | FieldValue;
 }
-
+export interface INotificationData {
+  NotificationStatus: 'started' | 'pending' | 'completed' | 'cancelled';
+  NotificationMessage: string;
+  NotificationCreatedAt: Timestamp | FieldValue;
+  NotificationIds: string[];
+  NotificationId: string;
+  NotificationSenderName: string;
+  NotificationCompanyId: string;
+  ShiftExchangeData?: {
+    ExchangeShiftId: string;
+    ExchangeShiftTime: string;
+    ExchangeShiftDate: Timestamp | FieldValue;
+    ExchangeShiftLocation: string;
+    ExchangeShiftRequestedId: string;
+    ExchangeShiftRequestedName: string;
+    ExchangeShiftName: string;
+  };
+  ShiftOfferData?: {
+    ShiftOfferId: string;
+    ShiftOfferTime: string;
+    ShiftOfferDate: Timestamp | FieldValue;
+    ShiftOfferLocation: string;
+    ShiftOfferShiftName: string;
+    ShiftOfferCompanyId: string;
+    ShiftOfferAcceptedId: string;
+  };
+  NotificationType: 'SHIFTEXCHANGE' | 'SHIFTOFFER' | 'Notification';
+}
 export interface IKeyAllocations {
   KeyAllocationId: string;
   KeyAllocationKeyId: string;

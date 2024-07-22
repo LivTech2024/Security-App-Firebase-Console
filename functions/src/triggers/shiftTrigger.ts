@@ -1,16 +1,107 @@
 /* eslint-disable max-len */
 import * as functions from 'firebase-functions';
-import { IShiftsCollection } from '../@types/database';
+import * as schedule from 'node-schedule';
+
+import {
+  ILoggedInUsersCollection,
+  IShiftsCollection,
+} from '../@types/database';
 import { CollectionName } from '../@types/enum';
 import { sendEmail } from '../notification/email';
 import {
+  getClientDetails,
   getCompanyDetails,
   getEmpDetails,
   processAndSendEmployeeDARReport,
 } from '../utils/firebaseUtils';
 import { findRemovedElements, formatDate } from '../utils/misc';
+import { processAndSendPatrolReport } from '../utils/shiftTriggerUtils/shiftTriggerUtils';
+import { sendFCMNotification } from '../notification/fcm';
+import { BaseMessage } from 'firebase-admin/lib/messaging/messaging-api';
+import { firestore } from 'firebase-admin';
+//* Trigger tasksimport { firestore } from 'firebase-admin';
+const scheduledJobs: { [key: string]: schedule.Job } = {};
+const isTimestamp = (value: any): value is FirebaseFirestore.Timestamp => {
+  return (
+    value &&
+    typeof value.seconds === 'number' &&
+    typeof value.nanoseconds === 'number'
+  );
+};
 
-//* Trigger tasks
+const schedulePhotoUploadNotifications = (shiftNewData: IShiftsCollection) => {
+  const intervalInMinutes = shiftNewData.ShiftPhotoUploadIntervalInMinutes;
+  const shiftStartTime = shiftNewData.ShiftStartTime;
+  const shiftId = shiftNewData.ShiftId;
+  const users = shiftNewData.ShiftAssignedUserId;
+  const [startHours, startMinutes] = shiftStartTime.split(':').map(Number);
+  const shiftStartDateTime = new Date();
+
+  if (isTimestamp(shiftNewData.ShiftDate)) {
+    shiftStartDateTime.setTime(shiftNewData.ShiftDate.seconds * 1000);
+  }
+  shiftStartDateTime.setHours(startHours);
+  shiftStartDateTime.setMinutes(startMinutes);
+
+  const job = schedule.scheduleJob(`*/${intervalInMinutes} * * * *`, () => {
+    const currentTime = new Date();
+    if (currentTime >= shiftStartDateTime) {
+      sendNotification(shiftId, users);
+    }
+  });
+
+  scheduledJobs[shiftId] = job;
+};
+const sendNotification = async (
+  shiftId: string,
+  shiftAssignedUserId: string[]
+) => {
+  try {
+    const fcmTokens: string[] = [];
+
+    await Promise.all(
+      shiftAssignedUserId.map(async (userId) => {
+        const loggedInDocSnapshot = await firestore()
+          .collection(`${CollectionName.loggedInUsers}`)
+          .where('LoggedInUserId', '==', userId)
+          .orderBy('LoggedInCreatedAt', 'desc')
+          .limit(5)
+          .get();
+
+        const loggedInDeviceData = loggedInDocSnapshot?.docs.map(
+          (doc) => doc.data() as ILoggedInUsersCollection
+        );
+
+        if (loggedInDeviceData && loggedInDeviceData.length > 0) {
+          loggedInDeviceData.forEach((data) => {
+            if (
+              data.LoggedInNotifyFcmToken &&
+              !fcmTokens.includes(data.LoggedInNotifyFcmToken)
+            ) {
+              fcmTokens.push(data.LoggedInNotifyFcmToken);
+            }
+          });
+        }
+      })
+    );
+
+    if (fcmTokens.length > 0) {
+      const message: BaseMessage = {
+        notification: {
+          title: 'Photo Upload Reminder',
+          body: `It's time to upload a photo for your shift.`,
+        },
+        data: {
+          route: '/wellness_check',
+        },
+      };
+
+      await sendFCMNotification(message, fcmTokens);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
 const sendEmailToEmpWhoHasBeenRemovedFromShift = async (
   shiftOldData: IShiftsCollection,
   shiftNewData: IShiftsCollection
@@ -64,6 +155,9 @@ export const sendEmailToEmpWhoHasCompletedShift = async (
     ShiftCurrentStatus,
     ShiftId,
     ShiftCompanyId,
+    ShiftClientId,
+    ShiftPosition,
+    ShiftLocationId,
   } = shiftOldData;
 
   const oldStatusStarted = shiftOldData.ShiftCurrentStatus?.some(
@@ -88,35 +182,75 @@ export const sendEmailToEmpWhoHasCompletedShift = async (
 
       if (StatusReportedById) {
         const empDetails = await getEmpDetails(StatusReportedById);
+        let ClientName = 'Clients';
+        let ClientEmail = '';
+
+        if (ShiftClientId) {
+          const clientDetails = await getClientDetails(ShiftClientId);
+          ClientName = clientDetails.ClientName || 'Clients';
+          ClientEmail =
+            clientDetails.ClientEmail || 'sutarvaibhav37@student.sfit.ac.in';
+        }
 
         if (empDetails) {
-          const { EmployeeEmail } = empDetails;
+          const { EmployeeEmail, EmployeeName } = empDetails;
+          // const { ClientName, ClientEmail } = clientDetials;
+
           await processAndSendEmployeeDARReport(
             StatusReportedById,
             ShiftId,
-            EmployeeEmail
+            ShiftStartTime,
+            ShiftEndTime,
+            EmployeeEmail,
+            ShiftPosition,
+            ClientEmail,
+            ClientName
+          );
+          const recipientEmails = [
+            'sutarvaibhav37@gmail.com',
+            // 'pankaj.kumar1312@yahoo.com',
+            // 'security@lestonholdings.com',
+            // 'dan@tpssolution.com',
+            // 'nica@lestonholdings.com',
+            // ClientEmail,
+          ];
+
+          console.log('Client Email ', ClientEmail);
+          //need to combine patrol based on client id for different patrols
+          await processAndSendPatrolReport(
+            StatusReportedById,
+            ShiftId,
+            // recipientEmails,
+            // 'sutarvaibhav37@gmail.com',
+            ShiftStartTime,
+            ShiftEndTime,
+            EmployeeName
+            // ClientName
           );
           console.log('Sending Email to-> ', EmployeeEmail);
-          await sendEmail({
-            from_name: CompanyName,
-            subject: 'Your Shift Completed',
-            to_email: EmployeeEmail,
-            text: `Shift Completed Trigger.\n Shift Name: ${ShiftName} \n Date: ${ShiftDate} \n Timing: ${ShiftStartTime}-${ShiftEndTime} \n Address: ${ShiftLocationAddress || 'N/A'}`,
-          });
+
+          // await sendEmail({
+          //   from_name: CompanyName,
+          //   subject: 'Your Shift Completed',
+          //   to_email: EmployeeEmail,
+          //   text: `Shift Completed Trigger.\n Shift Name: ${ShiftName} \n Date: ${ShiftDate} \n Timing: ${ShiftStartTime}-${ShiftEndTime} \n Address: ${ShiftLocationAddress || 'N/A'}`,
+          // });
         }
       }
     }
   }
 };
 
-export const shiftUpdate = functions.firestore
-  .document(CollectionName.shifts + '/{ShiftId}')
+export const shiftUpdate = functions
+  .runWith({ memory: '2GB', timeoutSeconds: 540 })
+  .firestore.document(CollectionName.shifts + '/{ShiftId}')
   .onUpdate(async (snap) => {
     try {
       const shiftOldData = snap?.before?.data() as IShiftsCollection;
 
       const shiftNewData = snap.after.data() as IShiftsCollection;
 
+      await shiftNewData;
       //* To send email to employees who have been removed from a shift
       await sendEmailToEmpWhoHasBeenRemovedFromShift(
         shiftOldData,

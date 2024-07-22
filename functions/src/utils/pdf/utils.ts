@@ -75,8 +75,8 @@ const compressAndConvertImage = async (imageURL: string): Promise<string> => {
 
     const compressedImg = await resizeImage({
       base64Image,
-      height: 720,
-      width: 720,
+      height: 200,
+      width: 200,
     });
 
     return `data:image/jpeg;base64,${compressedImg.toString('base64')}`;

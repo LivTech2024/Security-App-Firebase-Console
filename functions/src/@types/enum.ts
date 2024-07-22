@@ -26,6 +26,9 @@ export enum CollectionName {
   keyAllocations = 'KeyAllocations',
   tasks = 'Tasks',
   taskLogs = 'TaskLogs',
+  shiftexchange = 'ShiftExchange',
+  shiftoffer = 'ShiftOffer',
+  notification = 'Notification',
 }
 
 export enum IUserType {

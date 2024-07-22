@@ -7,14 +7,16 @@ import {
 import { firestore } from 'firebase-admin';
 import { sendFCMNotification } from '../notification/fcm';
 import { BaseMessage } from 'firebase-admin/lib/messaging/messaging-api';
+import { getEmpDetails } from '../utils/firebaseUtils';
 
 export const messageCreate = functions.firestore
   .document(CollectionName.messages + '/{MessageId}')
   .onCreate(async (snap) => {
     try {
       const messageData = snap.data() as IMessagesCollection;
-      const { MessageReceiversId, MessageData } = messageData;
-
+      const { MessageReceiversId, MessageData, MessageCreatedById } =
+        messageData;
+      const empdata = await getEmpDetails(MessageCreatedById);
       if (MessageReceiversId && Array.isArray(MessageReceiversId)) {
         const fcmTokens: string[] = [];
 
@@ -45,12 +47,29 @@ export const messageCreate = functions.firestore
             }
           })
         );
+        const notificationData = {
+          NotificationCreatedAt: firestore.FieldValue.serverTimestamp(),
+          NotificationIds: MessageReceiversId,
+          NotificationMessage: MessageData,
+          NotificationStatus: 'pending',
+          NotificationType: 'Message',
+          NotificationCompanyId: empdata.EmployeeCompanyId,
+          NotificationSenderName: empdata.EmployeeName,
+          // or another appropriate type
+        };
+
+        await firestore()
+          .collection(CollectionName.notification)
+          .add(notificationData);
 
         if (fcmTokens.length > 0) {
           const message: BaseMessage = {
             notification: {
               title: 'New Message Received',
               body: MessageData,
+            },
+            data: {
+              route: '/notification_screen',
             },
           };
 
